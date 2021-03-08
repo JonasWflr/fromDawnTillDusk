@@ -166,31 +166,33 @@ def show_plot_juniors(df_selected):
     )
     st.altair_chart(chart_distance, use_container_width=True)
 
-def show_combined_plot(df_selected):
+def show_combined_plot(df_selected, remaining_days):
     ###########################
     # COMBINED
-    st.header(':muscle: __Kombiniert__')
-    selection_geschlecht = alt.selection_single(fields=['Geschlecht'], bind='legend')
-    selection_technik = alt.selection_single(fields=['Technik'], bind='legend')
+    if (remaining_days) <= 0:
+        st.title('Ausser Konkurrenz')
+        st.header(':muscle: __Kombiniert__')
+        selection_geschlecht = alt.selection_single(fields=['Geschlecht'], bind='legend')
+        selection_technik = alt.selection_single(fields=['Technik'], bind='legend')
 
-    chart_combi = alt.Chart(
-        df_selected
-    ).mark_point(filled=True, size=300).encode(
-        y='Höhenmeter:Q',
-        x=alt.X('Km'),
-        color=color_all_legend,
-        shape='Technik',
-        tooltip=tooltip_all,
-        opacity=alt.condition(selection_technik | selection_geschlecht, alt.value(1), alt.value(0.2))
-    ).add_selection(selection_geschlecht, selection_technik)
-    st.altair_chart(chart_combi, use_container_width=True)
+        chart_combi = alt.Chart(
+            df_selected
+        ).mark_point(filled=True, size=300).encode(
+            y='Höhenmeter:Q',
+            x=alt.X('Km'),
+            color=color_all_legend,
+            shape='Technik',
+            tooltip=tooltip_all,
+            opacity=alt.condition(selection_technik | selection_geschlecht, alt.value(1), alt.value(0.2))
+        ).add_selection(selection_geschlecht, selection_technik)
+        st.altair_chart(chart_combi, use_container_width=True)
 
 def define_remaining_days_and_df():
     #################
     # CHOOSE DATE
     today = datetime.date.today()
     # for testing:
-    # today = datetime.date(2021,3,7)
+    #today = datetime.date(2021,3,6)
     # st.write(today)
     date_race = datetime.date(2021, 3, 6)
     remaining_days = (date_race - today).days
@@ -217,47 +219,45 @@ def show_prerace_stuff_vert(df_selected, remaining_days):
         n_participants = df_selected['id'].count()
         st.subheader('Angemeldet sind momentan {} Langläufer\*innen'.format(n_participants))
 
-        col1, col2 = st.beta_columns(2)
-
-        df_selected['Anzahl Technik'] = df_selected.groupby('Technik')['Technik'].transform('count')
+       #col1, col2 = st.beta_columns(2)
+       # df_selected['Anzahl Technik'] = df_selected.groupby('Technik')['Technik'].transform('count')
         df_selected['Anzahl Geschlecht'] = df_selected.groupby('Geschlecht')['Geschlecht'].transform('count')
+        max_value = df_selected['Anzahl Geschlecht'].max()+1.5
 
-        max_value = max(df_selected['Anzahl Technik'].max(),df_selected['Anzahl Geschlecht'].max())+1.5
-
-        chart_technik = alt.Chart(
-            df_selected[['Technik','Anzahl Technik','Name']],
-            height=300
-        ).mark_bar().encode(
-            y=alt.Y('Anzahl Technik:Q', axis=None, scale=alt.Scale(domain=(0,max_value))),
-            x=alt.X('Technik', sort='-y', title=None, axis=None)
-        )
-
-        chart_technik_text = chart_technik.mark_text(
-            align='center',
-            baseline='middle',
-            dy=-24,
-            color='black'
-        ).encode(
-            y=alt.Y('Anzahl Technik:Q'),
-            x=alt.X('Technik', sort='-y', title=None, axis=None),
-            text='Anzahl Technik:Q'
-        )
-
-        chart_technik_text2 = chart_technik.mark_text(
-            align='center',
-            baseline='middle',
-            dy=-10,
-            color='black'
-        ).encode(
-            y=alt.Y('Anzahl Technik:Q'),
-            # y=alt.Value(0),
-            x=alt.X('Technik', sort='-y', title=None, axis=None),
-            text='Technik:N'
-        )
-
-        chart_combined = chart_technik+chart_technik_text+chart_technik_text2
-        chart_combined.configure_view(strokeWidth=0)
-        col1.altair_chart(chart_combined, use_container_width=True)
+        # chart_technik = alt.Chart(
+        #     df_selected[['Technik','Anzahl Technik','Name']],
+        #     height=300
+        # ).mark_bar().encode(
+        #     y=alt.Y('Anzahl Technik:Q', axis=None, scale=alt.Scale(domain=(0,max_value))),
+        #     x=alt.X('Technik', sort='-y', title=None, axis=None)
+        # )
+        #
+        # chart_technik_text = chart_technik.mark_text(
+        #     align='center',
+        #     baseline='middle',
+        #     dy=-24,
+        #     color='black'
+        # ).encode(
+        #     y=alt.Y('Anzahl Technik:Q'),
+        #     x=alt.X('Technik', sort='-y', title=None, axis=None),
+        #     text='Anzahl Technik:Q'
+        # )
+        #
+        # chart_technik_text2 = chart_technik.mark_text(
+        #     align='center',
+        #     baseline='middle',
+        #     dy=-10,
+        #     color='black'
+        # ).encode(
+        #     y=alt.Y('Anzahl Technik:Q'),
+        #     # y=alt.Value(0),
+        #     x=alt.X('Technik', sort='-y', title=None, axis=None),
+        #     text='Technik:N'
+        # )
+        #
+        # chart_combined = chart_technik+chart_technik_text+chart_technik_text2
+        # chart_combined.configure_view(strokeWidth=0)
+        # col1.altair_chart(chart_combined, use_container_width=True)
 
         # KATEGORIE
         chart_kat = alt.Chart(
@@ -293,7 +293,7 @@ def show_prerace_stuff_vert(df_selected, remaining_days):
 
         chart_combined = chart_kat + chart_kat_text + chart_kat_text2
         chart_combined.configure_view(strokeOpacity=0)
-        col2.altair_chart(chart_combined, use_container_width=True)
+        st.altair_chart(chart_combined, use_container_width=True)
 
 #####################################################################################
 #####################################################################################
@@ -318,8 +318,8 @@ def main():
     # JUNIORS
     show_plot_juniors(df_selected)
 
-    st.title('Ausser Konkurrenz')
-    show_combined_plot(df_selected)
+    # SHOW POSTRACE STUFF
+    show_combined_plot(df_selected, remaining_days)
     # FOOTER
     #st.write(':palm_tree: :hibiscus: :palm_tree: :hibiscus: :palm_tree: :hibiscus: :palm_tree: :hibiscus: :palm_tree: :hibiscus: :palm_tree: :hibiscus: :palm_tree: :hibiscus: :palm_tree:')
     st.write('----------------------------------------------')
